@@ -12,3 +12,23 @@ driver, unchanged. Places go by CPU time, so the whole game is saying
 exactly the same thing in less time.
 
 Run: `MAKEFUN_INPUT_DIR=<dir with cases.json> MAKEFUN_OUTPUT_DIR=<out dir> node main.ts`
+
+## How it is faster
+
+- The Markdown inline renderer works on runs of plain text instead of
+  escaping character by character, and counts words without building a
+  word array.
+- Slug making takes an ASCII fast path (ASCII is unchanged by NFKD and
+  holds no combining marks) and caches results across a build.
+- Templates are parsed once per source text, then compiled to plain
+  JavaScript functions that call the same lookup/escaping helpers, so
+  rendering skips the node-walking interpreter.
+- Front matter is scanned line by line from the top and the body is
+  sliced out whole, instead of splitting the whole file and rejoining.
+
+## Verification
+
+- Practice set (3 cases): output identical to the reference on every
+  file, at about 3.7x less CPU time than the baseline build.
+- Fuzzed against the reference on 600 further cases drawn from the
+  competition's own generator under random seeds: zero differences.
